@@ -5,6 +5,46 @@ def call(Map config) {
   if(config.altTag) {
     altTag = config.altTag
   }
+  String registryUrl = env.REGISTRY_URL
+  if(config.registryUrl) {
+    registryUrl = config.registryUrl
+  }
+  String registryCredsId = env.REGISTRY_CREDS_ID
+  if(config.registryCredsId) {
+    registryCredsId = config.registryCredsId
+  }
+  String imageFullname = env.IMAGE_FULLNAME
+  if(config.imageFullname) {
+    imageFullname = config.imageFullname
+  }
+  String labelCreated = env.LABEL_CREATED
+  if(config.labelCreated) {
+    labelCreated = config.labelCreated
+  }
+  String labelTitle = env.LABEL_TITLE
+  if(config.labelTitle) {
+    labelTitle = config.labelTitle
+  }
+  String labelDescription = env.LABEL_DESCRIPTION
+  if(config.labelDescription) {
+    labelDescription = config.labelDescription
+  }
+  String labelAuthors = env.LABEL_AUTHORS
+  if(config.labelAuthors) {
+    labelAuthors = config.labelAuthors
+  }
+  String labelUrl = env.LABEL_URL
+  if(config.labelUrl) {
+    labelUrl = config.labelUrl
+  }
+  String labelSource = env.GIT_URL
+  if(config.labelSource) {
+    labelSource = config.labelSource
+  }
+  String labelRevision = env.REVISION
+  if(config.labelRevision) {
+    labelRevision = config.labelRevision
+  }
   String context = '.'
   if(config.context) {
     context = config.context
@@ -12,21 +52,21 @@ def call(Map config) {
   boolean useCache = config.useCache
   String cache = "--pull --no-cache"
   if(useCache) {
-    cache = "--cache-from ${env.IMAGE_FULLNAME}:${tag}"
+    cache = "--cache-from ${imageFullname}:${tag}"
   }
 
-  docker.withRegistry("${env.REGISTRY_URL}", "${env.REGISTRY_CREDS_ID}") {
+  docker.withRegistry("${registryUrl}", "${registryCredsId}") {
     env.DOCKER_BUILDKIT = 1
     def myImage = docker.build(
-      "${env.IMAGE_FULLNAME}:${tag}",
-      "--label \"org.opencontainers.image.created=${env.LABEL_CREATED}\" \
-      --label \"org.opencontainers.image.title=${env.LABEL_TITLE}\" \
-      --label \"org.opencontainers.image.description=${env.LABEL_DESCRIPTION}\" \
-      --label \"org.opencontainers.image.authors=${env.LABEL_AUTHORS}\" \
-      --label \"org.opencontainers.image.url=${env.LABEL_URL}\" \
-      --label \"org.opencontainers.image.source=${env.GIT_URL}\" \
+      "${imageFullname}:${tag}",
+      "--label \"org.opencontainers.image.created=${labelCreated}\" \
+      --label \"org.opencontainers.image.title=${labelTitle}\" \
+      --label \"org.opencontainers.image.description=${labelDescription}\" \
+      --label \"org.opencontainers.image.authors=${labelAuthors}\" \
+      --label \"org.opencontainers.image.url=${labelUrl}\" \
+      --label \"org.opencontainers.image.source=${labelSource}\" \
       --label \"org.opencontainers.image.version=${tag}\" \
-      --label \"org.opencontainers.image.revision=${env.REVISION}\" \
+      --label \"org.opencontainers.image.revision=${labelRevision}\" \
       --progress=plain \
       ${cache} \
       -f ${dockerFile} ${context}"
