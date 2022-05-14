@@ -51,8 +51,12 @@ def call(Map config) {
   }
   boolean useCache = config.useCache
   String cache = "--pull --no-cache"
+  String cacheFrom = "${imageFullname}:${tag}"
   if(useCache) {
-    cache = "--cache-from ${imageFullname}:${tag}"
+    if(config.cacheFrom) {
+      cacheFrom = config.cacheFrom
+    }
+    cache = "--cache-from ${cacheFrom}"
   }
 
   docker.withRegistry("${registryUrl}", "${registryCredsId}") {
