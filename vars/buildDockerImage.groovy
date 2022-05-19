@@ -58,6 +58,10 @@ def call(Map config) {
     }
     cache = "--cache-from ${cacheFrom}"
   }
+  boolean pushToRegistry = true
+  if(config.pushToRegistry == 'no') {
+    pushToRegistry = false
+  }
 
   docker.withRegistry("${registryUrl}", "${registryCredsId}") {
     env.DOCKER_BUILDKIT = 1
@@ -75,10 +79,12 @@ def call(Map config) {
       ${cache} \
       -f ${dockerFile} ${context}"
     )
-    myImage.push()
-    if(altTag) {
-      myImage.push(altTag)
+    if(pushToRegistry) {
+      myImage.push()
+      if(altTag) {
+        myImage.push(altTag)
+      }
+      sh "docker rmi -f \$(docker inspect -f '{{ .Id }}' ${myImage.id})"
     }
-    sh "docker rmi -f \$(docker inspect -f '{{ .Id }}' ${myImage.id})"
   }
 }
