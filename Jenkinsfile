@@ -32,6 +32,7 @@ pipeline {
     stage('Build image (cache)') {
       when {
         allOf {
+          branch 'main'
           anyOf {
             changeset ".docker/**"
             changeset "Jenkinsfile"
@@ -40,6 +41,7 @@ pipeline {
             anyOf {
               triggeredBy 'TimerTrigger'
               triggeredBy cause: 'UserIdCause'
+              changeRequest()
             }
           }
         }
@@ -58,6 +60,7 @@ pipeline {
 
     stage('Build image (no cache)') {
       when {
+        branch 'main'
         anyOf {
           triggeredBy 'TimerTrigger'
           triggeredBy cause: 'UserIdCause'
