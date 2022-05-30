@@ -16,6 +16,7 @@ gitea:latest
 github-branch-source:latest
 gradle:latest
 job-dsl:latest
+kubernetes:latest
 ldap:latest
 mailer:latest
 matrix-auth:latest
@@ -23,6 +24,7 @@ pam-auth:latest
 pipeline-github-lib:latest
 pipeline-stage-view:latest
 pipeline-utility-steps:latest
+proxmox:latest
 ssh-slaves:latest
 timestamper:latest
 workflow-aggregator:latest
