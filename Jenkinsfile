@@ -29,50 +29,116 @@ pipeline {
   }
 
   stages {
-    stage('Build image (cache)') {
-      when {
-        allOf {
-          branch 'main'
-          anyOf {
-            changeset ".docker/**"
-            changeset "Jenkinsfile"
+    stage('Build') {
+      parallel {
+        stage('Build jenkins image (cache)') {
+          when {
+            allOf {
+              branch 'main'
+              anyOf {
+                changeset ".docker/**"
+                changeset "Jenkinsfile"
+              }
+              not {
+                anyOf {
+                  triggeredBy 'TimerTrigger'
+                  triggeredBy cause: 'UserIdCause'
+                  changeRequest()
+                }
+              }
+            }
           }
-          not {
-            anyOf {
-              triggeredBy 'TimerTrigger'
-              triggeredBy cause: 'UserIdCause'
-              changeRequest()
+          steps {
+            script {
+              buildDockerImage(
+                dockerFile: "${DOCKERFILE}",
+                tag: "${IMAGE_TAG}",
+                context: ".docker",
+                useCache: true
+              )
             }
           }
         }
-      }
-      steps {
-        script {
-          buildDockerImage(
-            dockerFile: "${DOCKERFILE}",
-            tag: "${IMAGE_TAG}",
-            context: ".docker",
-            useCache: true
-          )
-        }
-      }
-    }
 
-    stage('Build image (no cache)') {
-      when {
-        branch 'main'
-        anyOf {
-          triggeredBy 'TimerTrigger'
-          triggeredBy cause: 'UserIdCause'
+        stage('Build jenkins image (no cache)') {
+          when {
+            branch 'main'
+            anyOf {
+              triggeredBy 'TimerTrigger'
+              triggeredBy cause: 'UserIdCause'
+            }
+          }
+          steps {
+            script {
+              buildDockerImage(
+                dockerFile: "${DOCKERFILE}",
+                tag: "${IMAGE_TAG}",
+                context: ".docker"
+              )
+            }
+          }
         }
-      }
-      steps {
-        script {
-          buildDockerImage(
-            dockerFile: "${DOCKERFILE}",
-            tag: "${IMAGE_TAG}",
-            context: ".docker"
-          )
+
+        stage('Build jenkins-agent image (cache)') {
+          when {
+            allOf {
+              branch 'main'
+              anyOf {
+                changeset ".docker/**"
+                changeset "Jenkinsfile"
+              }
+              not {
+                anyOf {
+                  triggeredBy 'TimerTrigger'
+                  triggeredBy cause: 'UserIdCause'
+                  changeRequest()
+                }
+              }
+            }
+          }
+          steps {
+            script {
+              def IMAGE_BASENAME = 'jenkins-agent'
+              def IMAGE_FULLNAME = "${REGISTRY}/${IMAGE_OWNER}/${IMAGE_BASENAME}"
+              def DOCKERFILE = ".docker/agent.Dockerfile"
+              buildDockerImage(
+                dockerFile: "${DOCKERFILE}",
+                tag: 'latest',
+                context: ".docker",
+                useCache: true,
+                imageFullname: "${IMAGE_FULLNAME}",
+                labelTitle: "${IMAGE_BASENAME}",
+                labelDescription: "${IMAGE_BASENAME}",
+                labelUrl: 'https://github.com/jenkinsci/docker-agent'
+              )
+            }
+          }
+        }
+
+        stage('Build jenkins-agent image (no cache)') {
+          when {
+            branch 'main'
+            anyOf {
+              triggeredBy 'TimerTrigger'
+              triggeredBy cause: 'UserIdCause'
+            }
+          }
+          steps {
+            script {
+              def IMAGE_BASENAME = 'jenkins-agent'
+              def IMAGE_FULLNAME = "${REGISTRY}/${IMAGE_OWNER}/${IMAGE_BASENAME}"
+              def DOCKERFILE = ".docker/agent.Dockerfile"
+              buildDockerImage(
+                dockerFile: "${DOCKERFILE}",
+                tag: 'latest',
+                context: ".docker",
+                imageFullname: "${IMAGE_FULLNAME}",
+                labelTitle: "${IMAGE_BASENAME}",
+                labelDescription: "${IMAGE_BASENAME}",
+                labelUrl: 'https://github.com/jenkinsci/docker-agent'
+              )
+            }
+          }
         }
       }
     }
