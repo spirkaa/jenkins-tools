@@ -22,7 +22,7 @@ RUN set -eux \
     && tar xvfz ${BINARY}.tar.gz \
     && mv ${BINARY} /usr/bin/yq \
     && chmod +x /usr/bin/yq \
-    && rm -rf ${BINARY}.tar.gz \
+    && rm -rf /tmp/* \
     && yq --version | grep -E "$(echo ${VERSION} | cut -c 2-)"
 
 USER jenkins
