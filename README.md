@@ -9,3 +9,4 @@
 
 * [buildDockerImage](vars/buildDockerImage.groovy) - сборка образа и пуш в закрытый реестр (1 или 2 метки)
 * [bumpVersion](vars/bumpVersion.groovy) - увеличение значения версии (semver)
+* [bumpHelmChartVersion](vars/bumpHelmChartVersion.groovy) - изменение версии Helm чарта
