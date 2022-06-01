@@ -1,72 +1,93 @@
 def call(Map config) {
+  def gpgKeyCredsId = config?.gpgKeyCredsId ?: "${GPG_KEY_CREDS_ID}"
+  def chartGitCredsId = config?.chartGitCredsId ?: "${REGISTRY_CREDS_ID}"
+  def imgRegistryCredsId = config?.imgRegistryCredsId ?: "${chartGitCredsId}"
+
+  def chartGitUrl = config?.chartGitUrl ?: "${HELM_CHART_GIT_URL}"
+  def chartGitBranch = config?.chartGitBranch ?: 'main'
+
+  def chartName = config?.chartName ?: "${IMAGE_BASENAME}"
+  def chartYaml = config?.chartYaml ?: "charts/${chartName}/Chart.yaml"
+  def chartVersionBumpStep = config?.chartVersionBumpStep ?: 'patch'
+
+  def imgOwner = config?.imgOwner ?: "${IMAGE_OWNER}"
+  def imgName = config?.imgName ?: "${chartName}"
+  def imgRevision = config?.imgRevision ?: "${REVISION}"
+  def imgRegistryBase = config?.imgRegistryBase ?: "${REGISTRY_URL}"
+  def imgRegistryApiUrl =
+    config?.imgRegistryApiUrl
+    ?: "${imgRegistryBase}/api/v1/packages/${imgOwner}/container/${imgName}/${imgRevision}"
+
+  def gitConfigUserEmail = config?.gitConfigUserEmail ?: 'jenkins@devmem.ru'
+  def gitConfigUserName = config?.gitConfigUserName ?: 'Jenkins'
+  def gitCommitMsg = config?.gitCommitMsg ?: "${chartName}: bump chart version"
+
   withCredentials([
-    file(credentialsId: "${GPG_KEY_CREDS_ID}", variable: 'GPG_KEY'),
-    usernameColonPassword(credentialsId: "${REGISTRY_CREDS_ID}", variable: 'REGISTRY_USER'),
+    file(credentialsId: "${gpgKeyCredsId}", variable: 'gpgKey'),
+    usernameColonPassword(credentialsId: "${imgRegistryCredsId}", variable: 'imgRegistryCreds'),
     ]) {
     dir('helm') {
       checkout(
         changelog: false,
         poll: false,
         scm: [$class: 'GitSCM',
-          branches: [[name: '*/main']],
+          branches: [[name: "*/${chartGitBranch}"]],
           extensions: [],
           userRemoteConfigs: [[
-            credentialsId: "${REGISTRY_CREDS_ID}",
-            url: "${HELM_CHART_GIT_URL}"
+            credentialsId: "${chartGitCredsId}",
+            url: "${chartGitUrl}"
           ]]
         ]
       )
 
-      def chart = "charts/${IMAGE_BASENAME}/Chart.yaml"
       def chartVersion =
-        sh(script: "awk '/^version:/ {print \$2}' ${chart}", returnStdout: true)
-          .toString()
-          .trim()
+        sh(script: "awk '/^version:/ {print \$2}' ${chartYaml}",
+          returnStdout: true).toString().trim()
       def appVersion =
-        sh(script: "awk '/^appVersion:/ {print \$2}' ${chart}", returnStdout: true)
-          .toString()
-          .trim()
-      def chartVersionBump = bumpVersion('patch', chartVersion)
-      def appVersionBump = "\"${REVISION}\"".toString()
-      // Checks that current app revision image present in container registry
-      def registryApiUrl = "${REGISTRY_URL}/api/v1/packages/${IMAGE_OWNER}/container/${IMAGE_BASENAME}/${REVISION}"
-      def (registryApiResp, registryApiRespCode) =
-        sh(script: "curl -s -w '\\n%{response_code}' -u \$REGISTRY_USER ${registryApiUrl}", returnStdout: true)
-          .trim()
-          .tokenize("\n")
+        sh(script: "awk '/^appVersion:/ {print \$2}' ${chartYaml}",
+          returnStdout: true).toString().trim()
+      def chartVersionBump = bumpVersion(chartVersionBumpStep, chartVersion)
+      def appVersionBump = "\"${imgRevision}\""
+      if (appVersion == appVersionBump) {
+        unstable 'Current app revision already in chart! ' \
+          + 'To trigger new image build commit in app repo.'
+        return
+      }
 
-      if (!(registryApiRespCode in ['200', '404'])) {
-        error "Registry response code: ${registryApiRespCode}"
+      // Checks that current app revision image present in container registry
+      def (resp, respCode) =
+        sh(script: "curl -s -w '\\n%{response_code}' -u \$imgRegistryCreds ${imgRegistryApiUrl}",
+          returnStdout: true).trim().tokenize("\n")
+      if (!(respCode in ['200', '404'])) {
+        error "Registry response code: ${respCode}"
       }
-      else if (registryApiRespCode == '404') {
-        error "Current app revision image ${REVISION} not found in registry! To trigger build use REBUILD parameter or commit in repo."
+      else if (respCode == '404') {
+        error "Current app revision image ${imgRevision} not found in registry! " \
+          + 'To trigger image build use REBUILD parameter or commit in app repo.'
       }
-      else if (appVersion == appVersionBump) {
-        error "Current app revision already in chart! To trigger build commit in repo."
-      }
-      else if (appVersion != appVersionBump && registryApiRespCode == '200') {
-        echo "Chart version: ${chartVersion} -> ${chartVersionBump}\nApp version: ${appVersion} -> ${appVersionBump}"
+      else if (appVersion != appVersionBump && respCode == '200') {
+        echo "Chart version: ${chartVersion} -> ${chartVersionBump}\n" \
+          + "App version: ${appVersion} -> ${appVersionBump}"
         sh """
           GPG_KEY_ID=\$(
-            gpg --import \$GPG_KEY 2>&1 | \
+            gpg --import \$gpgKey 2>&1 | \
             grep 'secret key imported' | \
             awk '{print \$3}' | \
             sed 's/.\$//'
           )
           git config user.signingkey \$GPG_KEY_ID
-          git config commit.gpgsign true
-          git config user.email jenkins@devmem.ru
-          git config user.name Jenkins
-          git checkout main
+          git config user.email ${gitConfigUserEmail}
+          git config user.name ${gitConfigUserName}
+          git checkout ${chartGitBranch}
 
-          sed -i 's/^version:.*/version: ${chartVersionBump}/' ${chart}
-          sed -i 's/^appVersion:.*/appVersion: ${appVersionBump}/' ${chart}
+          sed -i 's/^version:.*/version: ${chartVersionBump}/' ${chartYaml}
+          sed -i 's/^appVersion:.*/appVersion: ${appVersionBump}/' ${chartYaml}
         """
-        withCredentials([gitUsernamePassword(credentialsId: "${REGISTRY_CREDS_ID}")]) {
+        withCredentials([gitUsernamePassword(credentialsId: "${chartGitCredsId}")]) {
           sh """
-            git add ${chart}
-            git commit -m "${IMAGE_BASENAME}: bump chart version"
-            git push -u origin main
+            git add ${chartYaml}
+            git commit -S -m "${gitCommitMsg}"
+            git push -u origin ${chartGitBranch}
           """
         }
       }

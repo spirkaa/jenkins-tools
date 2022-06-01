@@ -8,5 +8,5 @@
 ## Библиотека инструментов ([Shared Library](https://www.jenkins.io/doc/book/pipeline/shared-libraries/))
 
 * [buildDockerImage](vars/buildDockerImage.groovy) - сборка образа и пуш в закрытый реестр (1 или 2 метки)
-* [bumpVersion](vars/bumpVersion.groovy) - увеличение значения версии (semver)
-* [bumpHelmChartVersion](vars/bumpHelmChartVersion.groovy) - изменение версии Helm чарта
+* [bumpVersion](vars/bumpVersion.groovy) - увеличение значения версии [semver](https://semver.org/)
+* [bumpHelmChartVersion](vars/bumpHelmChartVersion.groovy) - изменение версий Helm чарта и приложения в отдельном репозитории с подписью коммита
