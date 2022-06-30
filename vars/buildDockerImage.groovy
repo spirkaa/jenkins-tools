@@ -16,15 +16,19 @@ def call(Map config) {
   boolean useCache = config.useCache
   String cache = "--pull --no-cache"
   String cacheFrom = "${imageFullname}:${tag}"
-  if(useCache) {
-    if(config.cacheFrom) {
+  if (useCache) {
+    if (config.cacheFrom) {
       cacheFrom = config.cacheFrom
     }
     cache = "--cache-from ${cacheFrom}"
   }
   boolean pushToRegistry = true
-  if(config.pushToRegistry == 'no') {
+  if (config.pushToRegistry == 'no') {
     pushToRegistry = false
+  }
+  boolean deleteBuild = true
+  if (config.deleteBuild == 'no') {
+    deleteBuild = false
   }
 
   docker.withRegistry("${registryUrl}", "${registryCredsId}") {
@@ -43,11 +47,13 @@ def call(Map config) {
       ${cache} \
       -f ${dockerFile} ${context}"
     )
-    if(pushToRegistry) {
+    if (pushToRegistry) {
       myImage.push()
-      if(altTag) {
+      if (altTag) {
         myImage.push(altTag)
       }
+    }
+    if (deleteBuild) {
       sh "docker rmi -f \$(docker inspect -f '{{ .Id }}' ${myImage.id})"
     }
   }
