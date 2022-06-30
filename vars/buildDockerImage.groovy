@@ -1,54 +1,18 @@
 def call(Map config) {
-  String dockerFile = config.dockerFile
-  String tag = config.tag
-  String altTag = null
-  if(config.altTag) {
-    altTag = config.altTag
-  }
-  String registryUrl = env.REGISTRY_URL
-  if(config.registryUrl) {
-    registryUrl = config.registryUrl
-  }
-  String registryCredsId = env.REGISTRY_CREDS_ID
-  if(config.registryCredsId) {
-    registryCredsId = config.registryCredsId
-  }
-  String imageFullname = env.IMAGE_FULLNAME
-  if(config.imageFullname) {
-    imageFullname = config.imageFullname
-  }
-  String labelCreated = env.LABEL_CREATED
-  if(config.labelCreated) {
-    labelCreated = config.labelCreated
-  }
-  String labelTitle = env.LABEL_TITLE
-  if(config.labelTitle) {
-    labelTitle = config.labelTitle
-  }
-  String labelDescription = env.LABEL_DESCRIPTION
-  if(config.labelDescription) {
-    labelDescription = config.labelDescription
-  }
-  String labelAuthors = env.LABEL_AUTHORS
-  if(config.labelAuthors) {
-    labelAuthors = config.labelAuthors
-  }
-  String labelUrl = env.LABEL_URL
-  if(config.labelUrl) {
-    labelUrl = config.labelUrl
-  }
-  String labelSource = env.GIT_URL
-  if(config.labelSource) {
-    labelSource = config.labelSource
-  }
-  String labelRevision = env.REVISION
-  if(config.labelRevision) {
-    labelRevision = config.labelRevision
-  }
-  String context = '.'
-  if(config.context) {
-    context = config.context
-  }
+  String dockerFile = config?.dockerFile ?: 'Dockerfile'
+  String context = config?.context ?: '.'
+  String tag = config?.tag ?: 'latest'
+  String altTag = config?.altTag ?: null
+  String registryUrl = config?.registryUrl ?: env.REGISTRY_URL
+  String registryCredsId = config?.registryCredsId ?: env.REGISTRY_CREDS_ID
+  String imageFullname = config?.imageFullname ?: env.IMAGE_FULLNAME
+  String labelCreated = config?.labelCreated ?: env.LABEL_CREATED
+  String labelTitle = config?.labelTitle ?: env.LABEL_TITLE
+  String labelDescription = config?.labelDescription ?: env.LABEL_DESCRIPTION
+  String labelAuthors = config?.labelAuthors ?: env.LABEL_AUTHORS
+  String labelUrl = config?.labelUrl ?: env.LABEL_URL
+  String labelSource = config?.labelSource ?: env.GIT_URL
+  String labelRevision = config?.labelRevision ?: env.REVISION
   boolean useCache = config.useCache
   String cache = "--pull --no-cache"
   String cacheFrom = "${imageFullname}:${tag}"
