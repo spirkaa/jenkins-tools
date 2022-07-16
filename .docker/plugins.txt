@@ -26,6 +26,7 @@ pipeline-github-lib:latest
 pipeline-stage-view:latest
 pipeline-utility-steps:latest
 proxmox:latest
+skip-cron-rebuild:latest
 ssh-slaves:latest
 timestamper:latest
 workflow-aggregator:latest
