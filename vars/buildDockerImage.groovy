@@ -22,6 +22,12 @@ def call(Map config) {
     }
     cache = "--cache-from ${cacheFrom}"
   }
+  List buildArgs = []
+  if (config?.buildArgs) {
+    config.buildArgs.each {
+      buildArgs.add("--build-arg ${it}")
+    }
+  }
   boolean pushToRegistry = true
   if (config.pushToRegistry == 'no') {
     pushToRegistry = false
@@ -35,7 +41,8 @@ def call(Map config) {
     env.DOCKER_BUILDKIT = 1
     def myImage = docker.build(
       "${imageFullname}:${tag}",
-      "--label \"org.opencontainers.image.created=${labelCreated}\" \
+      "--progress=plain \
+      --label \"org.opencontainers.image.created=${labelCreated}\" \
       --label \"org.opencontainers.image.title=${labelTitle}\" \
       --label \"org.opencontainers.image.description=${labelDescription}\" \
       --label \"org.opencontainers.image.authors=${labelAuthors}\" \
@@ -43,9 +50,10 @@ def call(Map config) {
       --label \"org.opencontainers.image.source=${labelSource}\" \
       --label \"org.opencontainers.image.version=${tag}\" \
       --label \"org.opencontainers.image.revision=${labelRevision}\" \
-      --progress=plain \
+      ${buildArgs.join(' ')} \
       ${cache} \
-      -f ${dockerFile} ${context}"
+      -f ${dockerFile} \
+      ${context}"
     )
     if (pushToRegistry) {
       myImage.push()
