@@ -26,6 +26,7 @@ pam-auth:latest
 pipeline-github-lib:latest
 pipeline-stage-view:latest
 pipeline-utility-steps:latest
+prometheus:latest
 proxmox:latest
 skip-cron-rebuild:latest
 ssh-slaves:latest
