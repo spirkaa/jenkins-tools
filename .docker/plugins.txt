@@ -16,7 +16,7 @@ git:latest
 gitea:latest
 github-branch-source:latest
 gradle:latest
-jenkins-pipeline-cache::https://github.com/j3t/jenkins-pipeline-cache-plugin/releases/download/0.1.5/jenkins-pipeline-cache-0.1.5.hpi
+jenkins-pipeline-cache::https://github.com/j3t/jenkins-pipeline-cache-plugin/releases/download/0.2.0/jenkins-pipeline-cache-0.2.0.hpi
 job-dsl:latest
 kubernetes:latest
 ldap:latest
