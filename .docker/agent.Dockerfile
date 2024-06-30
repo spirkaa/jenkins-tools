@@ -1,9 +1,12 @@
+# hadolint global ignore=DL3007,DL3008
+
 FROM jenkins/agent:latest
+
+SHELL [ "/bin/bash", "-euxo", "pipefail", "-c" ]
 
 USER root
 
-RUN set -eux \
-    && apt-get update \
+RUN apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
         gnupg \
@@ -14,15 +17,12 @@ RUN set -eux \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
     && rm -rf /var/lib/apt/lists/*
 
-RUN set -eux \
-    && cd /tmp \
-    && BINARY=yq_linux_amd64 \
-    && VERSION="$(curl -fsS -L -o /dev/null -w %{url_effective} https://github.com/mikefarah/yq/releases/latest | sed 's/^.*\///g' )" \
-    && curl -fsS -L -O https://github.com/mikefarah/yq/releases/download/${VERSION}/${BINARY}.tar.gz \
-    && tar xvfz ${BINARY}.tar.gz \
-    && mv ${BINARY} /usr/bin/yq \
+WORKDIR /usr/bin
+
+RUN VERSION="$(curl -fsSL -o /dev/null -w %\{url_effective\} https://github.com/mikefarah/yq/releases/latest | sed 's/^.*\///g' )" \
+    && curl -fsSL -o yq "https://github.com/mikefarah/yq/releases/download/${VERSION}/yq_linux_amd64" \
     && chmod +x /usr/bin/yq \
-    && rm -rf /tmp/* \
-    && yq --version | grep -E "$(echo ${VERSION} | cut -c 2-)"
+    && yq --version | grep -E "${VERSION}"
 
 USER jenkins
+WORKDIR /home/jenkins

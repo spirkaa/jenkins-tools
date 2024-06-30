@@ -1,6 +1,6 @@
-FROM jenkins/jenkins:alpine-jdk11
+FROM jenkins/jenkins:alpine-jdk17
 
-ENV JAVA_OPTS -Duser.timezone=Europe/Moscow -Djenkins.install.runSetupWizard=false
+ENV JAVA_OPTS="-Duser.timezone=Europe/Moscow -Djenkins.install.runSetupWizard=false"
 
 COPY --chown=jenkins:jenkins plugins.txt /usr/share/jenkins/ref/plugins.txt
 
