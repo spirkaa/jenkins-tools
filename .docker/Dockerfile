@@ -1,4 +1,4 @@
-FROM jenkins/jenkins:alpine-jdk17
+FROM jenkins/jenkins:alpine-jdk21
 
 ENV JAVA_OPTS="-Duser.timezone=Europe/Moscow -Djenkins.install.runSetupWizard=false"
 
